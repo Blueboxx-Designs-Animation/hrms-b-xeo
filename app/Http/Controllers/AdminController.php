@@ -136,7 +136,7 @@ class AdminController extends Controller
         }
 
         // Prevent modifying Master Admin role
-        if (($targetUser->email === 'admin@blueboxx.com' || ($targetUser->role && strtolower($targetUser->role->name) === 'admin')) && $request->role !== 'admin') {
+        if (($targetUser->email === 'admin@xeoexperts.com' || ($targetUser->role && strtolower($targetUser->role->name) === 'admin')) && $request->role !== 'admin') {
             return response()->json(['message' => 'The Primary Admin account is permanent and its role cannot be modified.'], 403);
         }
 
@@ -185,7 +185,7 @@ class AdminController extends Controller
         }
 
         // Prevent deactivating or terminating Master Admin
-        if (($targetUser->email === 'admin@blueboxx.com' || ($targetUser->role && strtolower($targetUser->role->name) === 'admin')) && $request->status !== 'active') {
+        if (($targetUser->email === 'admin@xeoexperts.com' || ($targetUser->role && strtolower($targetUser->role->name) === 'admin')) && $request->status !== 'active') {
             return response()->json(['message' => 'The Primary Admin account is permanent and must remain active.'], 403);
         }
 

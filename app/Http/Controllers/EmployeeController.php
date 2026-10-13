@@ -301,7 +301,7 @@ class EmployeeController extends Controller
             'shift_id' => 'nullable',
         ]);
 
-        $isPrimaryAdmin = ($employee->email === 'admin@blueboxx.com') || ($employee->getCanonicalRole() === 'admin');
+        $isPrimaryAdmin = ($employee->email === 'admin@xeoexperts.com') || ($employee->getCanonicalRole() === 'admin');
 
         if ($request->has('role') && !$isPrimaryAdmin) {
             $role = Role::getByName($request->role);
@@ -450,7 +450,7 @@ class EmployeeController extends Controller
 
         // Protect Admin accounts from deletion (Permanent accounts)
         $empRoleName = strtolower($employee->role->name ?? '');
-        if ($empRoleName === 'admin' || $employee->email === 'admin@blueboxx.com') {
+        if ($empRoleName === 'admin' || $employee->email === 'admin@xeoexperts.com') {
             return response()->json(['message' => 'The Primary Admin account is permanent and cannot be removed from the system.'], 403);
         }
 

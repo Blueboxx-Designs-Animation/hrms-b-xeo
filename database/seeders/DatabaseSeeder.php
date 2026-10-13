@@ -131,7 +131,7 @@ class DatabaseSeeder extends Seeder
         );
 
         // 4. Default Passwords
-        $defaultPassword = Hash::make('Blueboxx@2026');
+        $defaultPassword = Hash::make('xeoexperts@2026');
 
         // 5. Master Users (Idempotent upsert by email or employee_code)
         $upsertUser = function (string $email, string $employeeCode, array $attributes) use ($defaultPassword): User {
@@ -150,7 +150,7 @@ class DatabaseSeeder extends Seeder
             return User::create($data);
         };
 
-        $admin = $upsertUser('admin@blueboxx.com', 'EMP001', [
+        $admin = $upsertUser('admin@xeoexperts.com', 'EMP001', [
             'organization_id' => $org->id,
             'role_id' => $adminRole->id,
             'branch_id' => $hqBranch->id,

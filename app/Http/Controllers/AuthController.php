@@ -199,7 +199,7 @@ class AuthController extends Controller
 
         // Security Guard: Prevent public reset of Master Administrator accounts
         $canonicalRole = $user->getCanonicalRole();
-        if ($canonicalRole === 'admin' || $user->email === 'admin@blueboxx.com') {
+        if ($canonicalRole === 'admin' || $user->email === 'admin@xeoexperts.com') {
             return response()->json([
                 'message' => 'Primary Administrator accounts cannot be reset via the public web form. Please use the administrative security console.'
             ], 403);
