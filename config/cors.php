@@ -13,20 +13,14 @@ return [
     'allowed_methods' => ['*'],
 
     'allowed_origins' => [
-        'https://hrms.blueboxx.in',
-        'http://hrms.blueboxx.in',
-        'https://hrms-backend.blueboxx.in',
-        'http://hrms-backend.blueboxx.in',
-        'https://hrms_backend.blueboxx.in',
-        'http://hrms_backend.blueboxx.in',
+        'https://xeo.blueboxxda.com',
+        'https://xeob.blueboxxda.com',
         'http://localhost:3000',
-        'http://localhost:8000',
         'http://127.0.0.1:3000',
-        'http://127.0.0.1:8000',
     ],
 
     'allowed_origins_patterns' => [
-        '#^https?://([a-zA-Z0-9-]+\.)?blueboxx\.in(:\d+)?$#',
+        '#^https?://([a-zA-Z0-9-]+\.)?blueboxxda\.com(:\d+)?$#',
     ],
 
     'allowed_headers' => ['*'],

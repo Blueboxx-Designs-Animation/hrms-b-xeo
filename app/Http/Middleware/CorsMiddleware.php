@@ -17,16 +17,10 @@ class CorsMiddleware
     public function handle(Request $request, Closure $next)
     {
         $trustedOrigins = [
-            'https://hrms.blueboxx.in',
-            'http://hrms.blueboxx.in',
-            'https://hrms-backend.blueboxx.in',
-            'http://hrms-backend.blueboxx.in',
-            'https://hrms_backend.blueboxx.in',
-            'http://hrms_backend.blueboxx.in',
+            'https://xeo.blueboxxda.com',
+            'https://xeob.blueboxxda.com',
             'http://localhost:3000',
-            'http://localhost:8000',
             'http://127.0.0.1:3000',
-            'http://127.0.0.1:8000',
         ];
 
         $appUrl = config('app.url');
@@ -36,11 +30,11 @@ class CorsMiddleware
 
         $incomingOrigin = $request->header('Origin');
         $isTrusted = false;
-        $allowOrigin = 'https://hrms.blueboxx.in';
+        $allowOrigin = 'https://xeo.blueboxxda.com';
 
         if ($incomingOrigin) {
             $normalized = rtrim($incomingOrigin, '/');
-            if (in_array($normalized, $trustedOrigins, true) || preg_match('/^https?:\/\/([a-zA-Z0-9-]+\.)?blueboxx\.in(:\d+)?$/', $normalized)) {
+            if (in_array($normalized, $trustedOrigins, true) || preg_match('/^https?:\/\/([a-zA-Z0-9-]+\.)?blueboxxda\.com(:\d+)?$/', $normalized)) {
                 $isTrusted = true;
                 $allowOrigin = $incomingOrigin;
             }
