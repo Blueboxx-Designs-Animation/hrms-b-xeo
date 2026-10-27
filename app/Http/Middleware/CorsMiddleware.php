@@ -59,7 +59,15 @@ class CorsMiddleware
             return response('', 200, $headers);
         }
 
-        $response = $next($request);
+        try {
+            $response = $next($request);
+        } catch (\Throwable $e) {
+            $response = response()->json([
+                'message' => $e->getMessage(),
+                'file' => config('app.debug') ? $e->getFile() : null,
+                'line' => config('app.debug') ? $e->getLine() : null,
+            ], 500);
+        }
 
         // Attach CORS headers to response
         if (method_exists($response, 'header')) {

@@ -61,7 +61,7 @@ class PayrollController extends Controller
         $search = $request->query('search');
 
         $query = Payroll::where('organization_id', $orgId)
-            ->with(['employee:id,name,email,employee_code,department,designation,joining_date,pan_number,bank_name,bank_account_no,status']);
+            ->with(['employee:id,name,email,employee_code,department,designation,joining_date,pan,bank_details,status']);
 
         if ($month && $month !== 'all') {
             $query->where('pay_period_month', $month);
@@ -508,9 +508,9 @@ class PayrollController extends Controller
                     'designation' => $payroll->employee->designation ?? 'Software Engineer',
                     'department' => $payroll->employee->department ?? 'Engineering',
                     'joining_date' => $payroll->employee->joining_date ? Carbon::parse($payroll->employee->joining_date)->format('d-M-Y') : '01-Jan-2024',
-                    'pan_number' => $payroll->employee->pan_number ?? 'ABCDE1234F',
-                    'bank_name' => $payroll->employee->bank_name ?? 'HDFC Bank Ltd',
-                    'bank_account_no' => $payroll->employee->bank_account_no ?? '50100234981290',
+                    'pan_number' => $payroll->employee->pan ?? ($payroll->employee->pan_number ?? 'ABCDE1234F'),
+                    'bank_name' => $payroll->employee->bank_details['bank_name'] ?? ($payroll->employee->bank_name ?? 'HDFC Bank Ltd'),
+                    'bank_account_no' => $payroll->employee->bank_details['account_number'] ?? ($payroll->employee->bank_account_no ?? '50100234981290'),
                 ],
                 'company' => [
                     'name' => 'BLUEBOXX DA PVT. LTD.',
