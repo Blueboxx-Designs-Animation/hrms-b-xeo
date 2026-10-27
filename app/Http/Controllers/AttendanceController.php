@@ -43,87 +43,10 @@ class AttendanceController extends Controller
             ], 400);
         }
 
-        // Check if shift has already ended for today (exempt admin/hr for testing/remote override)
-        if (!$isAdminOrHR) {
-            $isSaturday = Carbon::today()->isSaturday();
-            $cutoffTime = $isSaturday ? '14:00:00' : '18:00:00';
-            if ($user->shift && !$isSaturday && $user->shift->end_time) {
-                $cutoffTime = strlen($user->shift->end_time) === 5 ? $user->shift->end_time . ':00' : $user->shift->end_time;
-            }
+        // Shift cutoff restriction removed: employees can check-in/out flexibly.
 
-            $nowTime = Carbon::now()->format('H:i:s');
-            if ($nowTime >= $cutoffTime) {
-                return response()->json([
-                    'message' => 'Check-in closed: Your shift ended at ' . substr($cutoffTime, 0, 5) . '. Check-in is closed for today.',
-                ], 400);
-            }
-        }
-
-        // Office Location Geofence Verification: Clock-in only permitted if employee is at office place (within 500m)
-        $org = Organization::find($user->organization_id);
-        $settings = $org->settings ?? [];
-        $officeLocation = $settings['office_location'] ?? null;
-        if (!$officeLocation || !isset($officeLocation['latitude']) || !isset($officeLocation['longitude']) || (isset($officeLocation['radius_meters']) && $officeLocation['radius_meters'] == 2000) || (isset($officeLocation['latitude']) && abs(floatval($officeLocation['latitude']) - 22.2955) < 0.001)) {
-            $officeLocation = [
-                'enabled' => $officeLocation['enabled'] ?? true,
-                'name' => $officeLocation['name'] ?? 'Main Office Headquarters',
-                'latitude' => 22.3039,
-                'longitude' => 73.1783,
-                'radius_meters' => 500,
-                'address' => $officeLocation['address'] ?? 'SF 02, INDIA BULLS MEGA MALL, Dinesh Mill Rd, near Swami Vivekananda Railway Over Bridge, Anand Nagar, Akota, Vadodara, Gujarat 390022',
-            ];
-            $settings['office_location'] = $officeLocation;
-            if ($org) {
-                $org->settings = $settings;
-                $org->save();
-            }
-        }
-
+        // Geolocation/Geofence verification removed: check-in is permitted without GPS or geofence restrictions.
         $locationVerifiedNote = '';
-        if (!empty($officeLocation['enabled']) && !app()->environment('testing')) {
-            $empLat = $request->latitude !== null ? floatval($request->latitude) : null;
-            $empLng = $request->longitude !== null ? floatval($request->longitude) : null;
-
-            if ($empLat === null || $empLng === null) {
-                if ($isAdminOrHR) {
-                    $locationVerifiedNote = 'Admin verified (Office/Remote)';
-                } else {
-                    return response()->json([
-                        'message' => 'Office location verification required: Clock-in is only possible when you are physically at the office premises (within 500 meters). Please enable GPS location on your device.',
-                        'code' => 'LOCATION_REQUIRED',
-                        'office' => [
-                            'name' => $officeLocation['name'] ?? 'Main Office',
-                            'radius_meters' => $officeLocation['radius_meters'] ?? 500,
-                            'address' => $officeLocation['address'] ?? 'Office Premises',
-                        ]
-                    ], 422);
-                }
-            } else {
-                $officeLat = floatval($officeLocation['latitude'] ?? 22.3039);
-                $officeLng = floatval($officeLocation['longitude'] ?? 73.1783);
-                $allowedRadius = floatval($officeLocation['radius_meters'] ?? 500);
-
-                $distanceMeters = $this->calculateDistanceMeters($empLat, $empLng, $officeLat, $officeLng);
-
-                if ($distanceMeters > $allowedRadius) {
-                    $distanceFormatted = $distanceMeters >= 1000 ? round($distanceMeters / 1000, 1) . ' km' : round($distanceMeters) . ' meters';
-                    if ($isAdminOrHR) {
-                        $locationVerifiedNote = "Admin override ({$distanceFormatted} from office)";
-                    } else {
-                        return response()->json([
-                            'message' => "Clock-in restricted: You must be at the office premises to clock in. You are currently {$distanceFormatted} away from {$officeLocation['name']} (Allowed radius: {$allowedRadius} meters).",
-                            'code' => 'OUTSIDE_OFFICE_GEOFENCE',
-                            'distance_meters' => round($distanceMeters),
-                            'allowed_radius_meters' => $allowedRadius,
-                            'office_name' => $officeLocation['name'] ?? 'Main Office',
-                        ], 403);
-                    }
-                } else {
-                    $distDisplay = round($distanceMeters);
-                    $locationVerifiedNote = "Verified at office ({$distDisplay}m from center)";
-                }
-            }
-        }
 
         $user->load('shift');
         $nowTime = Carbon::now()->format('H:i:s');
@@ -186,7 +109,7 @@ class AttendanceController extends Controller
         }
 
         return response()->json([
-            'message' => 'Checked in successfully at ' . $nowTime . ($isLate ? " (Late by {$lateMinutes} mins)" : " (On-Time)") . ' • Office location verified.',
+            'message' => 'Checked in successfully at ' . $nowTime . ($isLate ? " (Late by {$lateMinutes} mins)" : " (On-Time)"),
             'attendance' => $attendance
         ]);
     }
@@ -218,28 +141,7 @@ class AttendanceController extends Controller
             ], 400);
         }
 
-        $isSaturday = Carbon::today()->isSaturday();
-        $cutoffTime = $isSaturday ? '14:00:00' : '18:00:00';
-        if ($user->shift && !$isSaturday && $user->shift->end_time) {
-            $cutoffTime = strlen($user->shift->end_time) === 5 ? $user->shift->end_time . ':00' : $user->shift->end_time;
-        }
-
         $nowTime = Carbon::now()->format('H:i:s');
-
-        // If clocking out at or past shift end (e.g. past 6:00 PM / Sat 2:00 PM)
-        if ($nowTime >= $cutoffTime) {
-            $attendance->check_out = $cutoffTime;
-            $autoNote = $isSaturday ? 'Auto check-out at Saturday shift end time (02:00 PM)' : 'Auto check-out at scheduled shift end time (' . substr($cutoffTime, 0, 5) . ')';
-            $currentNotes = $attendance->notes ?? '';
-            $attendance->notes = empty($currentNotes) ? $autoNote : (str_contains($currentNotes, 'Auto check-out') ? $currentNotes : $currentNotes . ' | ' . $autoNote);
-            $attendance->save();
-
-            return response()->json([
-                'message' => 'Shift ended at ' . substr($cutoffTime, 0, 5) . '. Automatically clocked out.',
-                'attendance' => $attendance
-            ]);
-        }
-
         $attendance->check_out = $nowTime;
         $attendance->save();
 
@@ -625,67 +527,9 @@ class AttendanceController extends Controller
      */
     public function processAutoCheckouts($organizationId = null, $userId = null)
     {
-        $query = Attendance::with(['user.shift'])
-            ->whereNotNull('check_in')
-            ->whereNull('check_out');
-
-        if ($organizationId) {
-            $query->where('organization_id', $organizationId);
-        }
-
-        if ($userId) {
-            $query->where('user_id', $userId);
-        }
-
-        $openAttendances = $query->get();
-        $now = Carbon::now();
-        $updatedCount = 0;
-
-        foreach ($openAttendances as $att) {
-            $user = $att->user;
-            if (!$user) continue;
-
-            $attDate = Carbon::parse($att->date)->toDateString();
-            $attCarbon = Carbon::parse($att->date);
-            $isSaturday = $attCarbon->isSaturday();
-
-            // Auto checkout times:
-            // Saturday: 2:00 PM (14:00:00)
-            // Monday - Friday (non-Saturday): 6:00 PM (18:00:00)
-            if ($isSaturday) {
-                $endTimeStr = '14:00:00';
-                $autoNote = 'Auto check-out at Saturday shift end time (02:00 PM)';
-            } else {
-                $shift = $user->shift;
-                $rawEndTime = ($shift && $shift->end_time) ? $shift->end_time : '18:00:00';
-                $endTimeStr = strlen($rawEndTime) === 5 ? $rawEndTime . ':00' : $rawEndTime;
-                $autoNote = 'Auto check-out at scheduled shift end time (' . substr($endTimeStr, 0, 5) . ')';
-            }
-
-            try {
-                $shiftEndDt = Carbon::parse($attDate . ' ' . $endTimeStr);
-            } catch (\Exception $e) {
-                $shiftEndDt = Carbon::parse($attDate . ' ' . ($isSaturday ? '14:00:00' : '18:00:00'));
-            }
-
-            $todayStr = Carbon::today()->toDateString();
-            // If current time has reached or passed the shift end time, or if attendance was from a previous day
-            if ($attDate < $todayStr || $now->greaterThanOrEqualTo($shiftEndDt)) {
-                $att->check_out = $endTimeStr;
-                $currentNotes = $att->notes ?? '';
-
-                if (empty($currentNotes) || $currentNotes === 'On-time check-in') {
-                    $att->notes = $autoNote;
-                } elseif (!str_contains($currentNotes, 'Auto check-out') && !str_contains($currentNotes, 'Auto clocked out')) {
-                    $att->notes = $currentNotes . ' | ' . $autoNote;
-                }
-
-                $att->save();
-                $updatedCount++;
-            }
-        }
-
-        return $updatedCount;
+        // Automatic clock-out at 6 PM / shift end has been disabled as requested.
+        // Employees now manually clock out whenever they finish their shift.
+        return 0;
     }
 
     /**
