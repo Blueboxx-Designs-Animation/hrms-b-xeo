@@ -82,12 +82,9 @@ class LeaveController extends Controller
 
         if ($types->isEmpty()) {
             $defaults = [
-                ['name' => 'Casual Leave (CL)', 'annual_quota' => 12, 'is_paid' => true],
-                ['name' => 'Sick Leave (SL)', 'annual_quota' => 10, 'is_paid' => true],
-                ['name' => 'Earned / Privilege Leave (PL)', 'annual_quota' => 15, 'is_paid' => true],
-                ['name' => 'Maternity / Paternity Leave', 'annual_quota' => 30, 'is_paid' => true],
-                ['name' => 'Compensatory Off (Comp-Off)', 'annual_quota' => 5, 'is_paid' => true],
-                ['name' => 'Unpaid Leave (LOP)', 'annual_quota' => 0, 'is_paid' => false],
+                ['name' => 'Personal Leave', 'annual_quota' => 5, 'is_paid' => true],
+                ['name' => 'Casual Leave', 'annual_quota' => 5, 'is_paid' => true],
+                ['name' => 'Sick Leave', 'annual_quota' => 5, 'is_paid' => true],
             ];
             foreach ($defaults as $d) {
                 LeaveType::create([

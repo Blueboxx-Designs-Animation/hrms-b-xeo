@@ -533,26 +533,28 @@ class InvoiceController extends Controller
         $settings = $org ? $org->settings : [];
 
         $companyInfo = [
-            'name' => $org->name ?? 'Blueboxx DA',
-            'code' => $org->code ?? 'BLUEBOXX',
-            'logo' => $settings['organization_logo'] ?? $settings['logo_url'] ?? '/images/logoblue.png',
-            'icon_logo' => $settings['organization_icon_logo'] ?? $settings['icon_logo_url'] ?? '/images/Boxxlogo.png',
-            'address' => '02, India Bulls Mall, Jetalpur Road',
-            'city' => 'Vadodara',
+            'name' => 'XeoExperts',
+            'contact_person' => 'Hardik Shah',
+            'code' => 'XEOEXPERTS',
+            'logo' => '/images/xeoexperts-logo.jpg',
+            'icon_logo' => '/images/xeoexperts-logo.jpg',
+            'address' => '617 Ganesh Glory Gota',
+            'city_postal' => '382481 Ahmedabad',
+            'city' => 'Ahmedabad',
             'state' => 'Gujarat',
-            'postal_code' => '390022',
+            'postal_code' => '382481',
             'country' => 'India',
-            'email' => 'contact@blueboxx.in',
-            'phone' => '9023512853',
-            'website' => 'http://www.blueboxx.in/',
+            'email' => 'hardik.shah@xeoexperts.com',
+            'phone' => '+919904839139',
+            'website' => 'https://www.xeoexperts.com/',
             'gst_number' => '24AAACB9012F1Z8',
             'pan_number' => 'AAACB9012F',
             'bank_details' => [
                 'bank_name' => 'HDFC Bank Ltd',
-                'account_name' => 'BLUEBOXX ENTERPRISE PVT LTD',
+                'account_name' => 'XEOEXPERTS PVT LTD',
                 'account_number' => '50200088912345',
                 'ifsc_code' => 'HDFC0000123',
-                'branch' => 'Akota Branch, Vadodara',
+                'branch' => 'Gota, Ahmedabad',
             ]
         ];
 

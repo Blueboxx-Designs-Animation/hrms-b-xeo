@@ -17,16 +17,13 @@ class DepartmentController extends Controller
         $existingCount = Department::where('organization_id', $user->organization_id)->count();
         if ($existingCount === 0) {
             $defaultDepts = [
-                'Engineering',
-                'Human Resources',
-                'Product Management',
-                'Marketing',
-                'Finance',
-                'Executive',
-                'Sales',
-                'Legal & Compliance',
                 'Customer Success',
+                'Executive',
+                'Finance',
+                'Human Resources',
+                'Legal & Compliance',
                 'Operations',
+                'Sales & Marketing',
             ];
 
             foreach ($defaultDepts as $dName) {

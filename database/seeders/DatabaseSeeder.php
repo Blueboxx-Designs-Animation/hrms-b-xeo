@@ -112,31 +112,31 @@ class DatabaseSeeder extends Seeder
             $admin = User::create($adminData);
         }
 
-        // 6. Master Leave Types
+        // 6. Master Leave Types (Total 15: 5 Personal, 5 Casual, 5 Sick)
+        $personal = LeaveType::firstOrCreate(
+            ['organization_id' => $org->id, 'name' => 'Personal Leave'],
+            ['annual_quota' => 5, 'is_paid' => true]
+        );
         $casual = LeaveType::firstOrCreate(
             ['organization_id' => $org->id, 'name' => 'Casual Leave'],
-            ['annual_quota' => 12, 'is_paid' => true]
+            ['annual_quota' => 5, 'is_paid' => true]
         );
         $sick = LeaveType::firstOrCreate(
             ['organization_id' => $org->id, 'name' => 'Sick Leave'],
-            ['annual_quota' => 10, 'is_paid' => true]
-        );
-        $earned = LeaveType::firstOrCreate(
-            ['organization_id' => $org->id, 'name' => 'Earned Leave'],
-            ['annual_quota' => 15, 'is_paid' => true]
+            ['annual_quota' => 5, 'is_paid' => true]
         );
 
         LeaveBalance::firstOrCreate(
+            ['organization_id' => $org->id, 'user_id' => $admin->id, 'leave_type_id' => $personal->id],
+            ['allocated' => 5, 'used' => 0, 'remaining' => 5]
+        );
+        LeaveBalance::firstOrCreate(
             ['organization_id' => $org->id, 'user_id' => $admin->id, 'leave_type_id' => $casual->id],
-            ['allocated' => 12, 'used' => 0, 'remaining' => 12]
+            ['allocated' => 5, 'used' => 0, 'remaining' => 5]
         );
         LeaveBalance::firstOrCreate(
             ['organization_id' => $org->id, 'user_id' => $admin->id, 'leave_type_id' => $sick->id],
-            ['allocated' => 10, 'used' => 0, 'remaining' => 10]
-        );
-        LeaveBalance::firstOrCreate(
-            ['organization_id' => $org->id, 'user_id' => $admin->id, 'leave_type_id' => $earned->id],
-            ['allocated' => 15, 'used' => 0, 'remaining' => 15]
+            ['allocated' => 5, 'used' => 0, 'remaining' => 5]
         );
     }
 }
