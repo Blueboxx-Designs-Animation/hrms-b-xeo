@@ -53,6 +53,7 @@ Route::middleware(TokenAuthMiddleware::class)->group(function () {
     // Roles Management
     Route::get('/roles', [RoleController::class, 'index']);
     Route::post('/roles', [RoleController::class, 'store'])->middleware('role:admin');
+    Route::put('/roles/{id}', [RoleController::class, 'update'])->middleware('role:admin');
     Route::delete('/roles/{id}', [RoleController::class, 'destroy'])->middleware('role:admin');
     Route::get('/shifts', function (\Illuminate\Http\Request $request) {
         $user = $request->user();

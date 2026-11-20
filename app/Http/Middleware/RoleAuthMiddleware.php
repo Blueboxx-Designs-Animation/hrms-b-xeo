@@ -30,13 +30,39 @@ class RoleAuthMiddleware
             return $next($request);
         }
 
+        // Custom role check: if the user has custom role and permission exists
+        $userRoleModel = $user->role;
+        $userPermissions = $userRoleModel ? ($userRoleModel->permissions ?? []) : [];
+        if (in_array('all', $userPermissions)) {
+            return $next($request);
+        }
+
         if (!empty($roles)) {
             $allowedRoles = array_map('strtolower', $roles);
-            if (!in_array($userRole, $allowedRoles)) {
-                return response()->json([
-                    'message' => 'Unauthorized: Insufficient role permissions for this endpoint'
-                ], 403);
+            
+            // Check direct canonical role match
+            if (in_array($userRole, $allowedRoles)) {
+                return $next($request);
             }
+
+            // Check if actual role name (e.g. custom key) matches
+            $rawRoleName = strtolower($userRoleModel->name ?? '');
+            if (in_array($rawRoleName, $allowedRoles)) {
+                return $next($request);
+            }
+
+            // Route uri to module mapping check
+            $path = $request->path(); // e.g. api/invoices, api/clients
+            $module = explode('/', str_replace('api/', '', $path))[0] ?? '';
+            
+            // Allow if module matches user permissions
+            if (!empty($module) && (in_array($module, $userPermissions) || ($module === 'clients' && in_array('invoices', $userPermissions)))) {
+                return $next($request);
+            }
+
+            return response()->json([
+                'message' => 'Unauthorized: Insufficient role permissions for this endpoint'
+            ], 403);
         }
 
         return $next($request);

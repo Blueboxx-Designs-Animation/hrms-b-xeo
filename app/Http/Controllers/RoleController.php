@@ -13,6 +13,7 @@ class RoleController extends Controller
      */
     public function index(Request $request)
     {
+        Role::ensureStandardRoles();
         $roles = Role::orderBy('id', 'asc')->get();
         return response()->json([
             'roles' => $roles
@@ -28,6 +29,7 @@ class RoleController extends Controller
             'display_name' => 'required|string|max:100',
             'name' => 'nullable|string|max:50',
             'description' => 'nullable|string|max:500',
+            'permissions' => 'nullable|array',
         ]);
 
         $displayName = trim($validated['display_name']);
@@ -48,12 +50,47 @@ class RoleController extends Controller
             'name' => $systemKey,
             'display_name' => $displayName,
             'description' => $validated['description'] ?? "Custom role: {$displayName}",
+            'permissions' => $validated['permissions'] ?? [],
         ]);
 
         return response()->json([
             'message' => "Role '{$displayName}' created successfully!",
             'role' => $role
         ], 201);
+    }
+
+    /**
+     * Update an existing role (especially permissions and description)
+     */
+    public function update(Request $request, $id)
+    {
+        $role = Role::find($id);
+        if (!$role) {
+            return response()->json(['message' => 'Role not found'], 404);
+        }
+
+        $validated = $request->validate([
+            'display_name' => 'sometimes|required|string|max:100',
+            'description' => 'nullable|string|max:500',
+            'permissions' => 'nullable|array',
+        ]);
+
+        if (isset($validated['display_name'])) {
+            $role->display_name = trim($validated['display_name']);
+        }
+        if (isset($validated['description'])) {
+            $role->description = $validated['description'];
+        }
+        if (isset($validated['permissions'])) {
+            $role->permissions = $validated['permissions'];
+        }
+
+        $role->save();
+
+        return response()->json([
+            'message' => "Role '{$role->display_name}' updated successfully!",
+            'role' => $role
+        ]);
     }
 
     /**

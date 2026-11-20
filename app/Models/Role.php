@@ -13,6 +13,11 @@ class Role extends Model
         'name',
         'display_name',
         'description',
+        'permissions',
+    ];
+
+    protected $casts = [
+        'permissions' => 'array',
     ];
 
     public function users()
@@ -31,37 +36,44 @@ class Role extends Model
                 'name' => 'admin',
                 'display_name' => 'Admin',
                 'description' => 'Full administrative control and executive management',
+                'permissions' => ['all'],
             ],
             [
                 'name' => 'hr',
                 'display_name' => 'HR Manager',
                 'description' => 'Manages HR operations, employees, and statutory payroll',
+                'permissions' => ['dashboard', 'employees', 'recruitment', 'leave', 'attendance', 'payroll', 'documents', 'tasks', 'timesheets', 'assets', 'helpdesk', 'reports', 'announcements'],
             ],
             [
                 'name' => 'manager',
                 'display_name' => 'Company Manager',
                 'description' => 'Manages department heads, team leaders, and projects',
+                'permissions' => ['dashboard', 'team', 'employees', 'tasks', 'performance', 'documents', 'attendance', 'leave', 'timesheets', 'helpdesk', 'reports'],
             ],
             [
                 'name' => 'team_leader',
                 'display_name' => 'Team Leader',
                 'description' => 'Manages direct team members and day-to-day task execution',
+                'permissions' => ['dashboard', 'team', 'tasks', 'performance', 'documents', 'attendance', 'leave', 'timesheets', 'helpdesk'],
             ],
             [
                 'name' => 'employee',
                 'display_name' => 'Employee',
                 'description' => 'Self-service portal, tasks, attendance, and leave requests',
+                'permissions' => ['dashboard', 'payroll', 'tasks', 'performance', 'attendance', 'leave', 'timesheets', 'assets', 'helpdesk', 'documents'],
             ],
         ];
 
         foreach ($standardRoles as $roleData) {
-            self::firstOrCreate(
-                ['name' => $roleData['name']],
-                [
-                    'display_name' => $roleData['display_name'],
-                    'description' => $roleData['description'],
-                ]
-            );
+            $role = self::where('name', $roleData['name'])->first();
+            if ($role) {
+                if (empty($role->permissions)) {
+                    $role->permissions = $roleData['permissions'];
+                    $role->save();
+                }
+            } else {
+                self::create($roleData);
+            }
         }
     }
 
@@ -84,7 +96,7 @@ class Role extends Model
             self::ensureStandardRoles();
             $role = self::where('name', $normalized)->first() 
                 ?? self::where('name', 'employee')->first()
-                ?? self::firstOrCreate(['name' => 'employee'], ['display_name' => 'Employee', 'description' => 'Employee self-service']);
+                ?? self::firstOrCreate(['name' => 'employee'], ['display_name' => 'Employee', 'description' => 'Employee self-service', 'permissions' => ['dashboard', 'payroll', 'tasks', 'attendance', 'leave']]);
         }
 
         return $role;
