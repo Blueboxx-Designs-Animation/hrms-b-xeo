@@ -84,7 +84,7 @@ class LeaveController extends Controller
             $defaults = [
                 ['name' => 'Personal Leave', 'annual_quota' => 5, 'is_paid' => true],
                 ['name' => 'Casual Leave', 'annual_quota' => 5, 'is_paid' => true],
-                ['name' => 'Sick Leave', 'annual_quota' => 5, 'is_paid' => true],
+                ['name' => 'Privilege Leave (PL)', 'annual_quota' => 5, 'is_paid' => true],
             ];
             foreach ($defaults as $d) {
                 LeaveType::create([

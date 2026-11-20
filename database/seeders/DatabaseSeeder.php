@@ -112,7 +112,7 @@ class DatabaseSeeder extends Seeder
             $admin = User::create($adminData);
         }
 
-        // 6. Master Leave Types (Total 15: 5 Personal, 5 Casual, 5 Sick)
+        // 6. Master Leave Types (Total 15: 5 Personal, 5 Casual, 5 Privilege Leave (PL))
         $personal = LeaveType::firstOrCreate(
             ['organization_id' => $org->id, 'name' => 'Personal Leave'],
             ['annual_quota' => 5, 'is_paid' => true]
@@ -121,8 +121,8 @@ class DatabaseSeeder extends Seeder
             ['organization_id' => $org->id, 'name' => 'Casual Leave'],
             ['annual_quota' => 5, 'is_paid' => true]
         );
-        $sick = LeaveType::firstOrCreate(
-            ['organization_id' => $org->id, 'name' => 'Sick Leave'],
+        $pl = LeaveType::firstOrCreate(
+            ['organization_id' => $org->id, 'name' => 'Privilege Leave (PL)'],
             ['annual_quota' => 5, 'is_paid' => true]
         );
 
@@ -135,7 +135,7 @@ class DatabaseSeeder extends Seeder
             ['allocated' => 5, 'used' => 0, 'remaining' => 5]
         );
         LeaveBalance::firstOrCreate(
-            ['organization_id' => $org->id, 'user_id' => $admin->id, 'leave_type_id' => $sick->id],
+            ['organization_id' => $org->id, 'user_id' => $admin->id, 'leave_type_id' => $pl->id],
             ['allocated' => 5, 'used' => 0, 'remaining' => 5]
         );
     }
