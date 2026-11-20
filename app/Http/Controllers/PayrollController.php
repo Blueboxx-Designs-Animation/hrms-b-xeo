@@ -524,6 +524,39 @@ class PayrollController extends Controller
         $org = $payroll->organization;
         $settings = $org->settings ?? [];
 
+        // Compute monthly working days & leaves taken automatically
+        $monthName = $payroll->pay_period_month;
+        $yearNum = intval($payroll->pay_period_year);
+        $monthNumber = date('m', strtotime("$monthName 1, $yearNum"));
+        $startDate = Carbon::createFromDate($yearNum, $monthNumber, 1)->startOfMonth()->toDateString();
+        $endDate = Carbon::createFromDate($yearNum, $monthNumber, 1)->endOfMonth()->toDateString();
+
+        // Count attendance days (present/late/half_day)
+        $workingDays = \App\Models\Attendance::where('user_id', $payroll->employee_id)
+            ->whereBetween('date', [$startDate, $endDate])
+            ->where(function ($q) {
+                $q->whereIn('status', ['present', 'late', 'half_day'])
+                  ->orWhereNotNull('check_in');
+            })
+            ->count();
+
+        // If no attendance records yet, default standard working days in month (approx 22-26)
+        if ($workingDays === 0) {
+            $workingDays = Carbon::createFromDate($yearNum, $monthNumber, 1)->endOfMonth()->day - 6; // exclude typical weekends
+            if ($workingDays < 1) $workingDays = 22;
+        }
+
+        // Count approved leaves taken in this month
+        $leavesTaken = \App\Models\LeaveRequest::where('user_id', $payroll->employee_id)
+            ->where('status', 'approved')
+            ->where(function ($q) use ($startDate, $endDate) {
+                $q->whereBetween('start_date', [$startDate, $endDate])
+                  ->orWhereBetween('end_date', [$startDate, $endDate]);
+            })
+            ->sum('days_count');
+
+        $leavesTaken = intval($leavesTaken);
+
         return response()->json([
             'slip' => [
                 'id' => $payroll->id,
@@ -547,6 +580,8 @@ class PayrollController extends Controller
                     'pan_number' => $payroll->employee->pan ?? ($payroll->employee->pan_number ?? 'ABCDE1234F'),
                     'bank_name' => $payroll->employee->bank_details['bank_name'] ?? ($payroll->employee->bank_name ?? 'HDFC Bank Ltd'),
                     'bank_account_no' => $payroll->employee->bank_details['account_number'] ?? ($payroll->employee->bank_account_no ?? '50100234981290'),
+                    'working_days' => $workingDays,
+                    'leaves_taken' => $leavesTaken,
                 ],
                 'company' => [
                     'name' => 'XeoExperts',
