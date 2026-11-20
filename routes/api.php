@@ -163,6 +163,7 @@ Route::middleware(TokenAuthMiddleware::class)->group(function () {
     Route::post('/payroll/bulk-generate', [PayrollController::class, 'bulkGenerate'])->middleware(['role:admin', 'throttle:10,1']);
     Route::get('/payroll/{id}', [PayrollController::class, 'show']);
     Route::put('/payroll/{id}', [PayrollController::class, 'update'])->middleware('role:admin');
+    Route::delete('/payroll/{id}', [PayrollController::class, 'destroy'])->middleware('role:admin');
     Route::post('/payroll/{id}/mark-paid', [PayrollController::class, 'markPaid'])->middleware('role:admin');
     Route::get('/payroll/{id}/slip-data', [PayrollController::class, 'slipData']);
     Route::get('/employee/payslips', [PayrollController::class, 'employeePayslips']);

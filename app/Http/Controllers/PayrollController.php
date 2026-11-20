@@ -438,6 +438,42 @@ class PayrollController extends Controller
     }
 
     /**
+     * Delete a payroll record (Admin only).
+     */
+    public function destroy(Request $request, $id)
+    {
+        $this->ensureTableExists();
+
+        $user = $request->user();
+        $payroll = Payroll::where('organization_id', $user->organization_id)
+            ->where('id', $id)
+            ->first();
+
+        if (!$payroll) {
+            return response()->json(['message' => 'Payroll record not found'], 404);
+        }
+
+        AuditLog::create([
+            'organization_id' => $user->organization_id,
+            'actor_id' => $user->id,
+            'action' => 'payroll_deleted',
+            'target_type' => Payroll::class,
+            'target_id' => $payroll->id,
+            'payload' => [
+                'employee_id' => $payroll->employee_id,
+                'period' => $payroll->pay_period_month . ' ' . $payroll->pay_period_year,
+                'net_salary' => $payroll->net_salary,
+            ],
+        ]);
+
+        $payroll->delete();
+
+        return response()->json([
+            'message' => 'Payroll record deleted successfully',
+        ]);
+    }
+
+    /**
      * Read-only payslip history for the authenticated employee only.
      */
     public function employeePayslips(Request $request)
