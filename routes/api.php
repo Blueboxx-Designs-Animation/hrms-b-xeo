@@ -27,6 +27,7 @@ use App\Http\Controllers\PayrollController;
 use App\Http\Controllers\MonthlyAttendanceReportController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\ClientController;
+use App\Http\Controllers\RoleController;
 use App\Http\Middleware\TokenAuthMiddleware;
 use App\Models\Organization;
 use Illuminate\Http\Request;
@@ -48,6 +49,11 @@ Route::middleware(TokenAuthMiddleware::class)->group(function () {
     Route::get('/departments', [DepartmentController::class, 'index']);
     Route::post('/departments', [DepartmentController::class, 'store'])->middleware('role:admin,hr');
     Route::delete('/departments/{id}', [DepartmentController::class, 'destroy'])->middleware('role:admin,hr');
+
+    // Roles Management
+    Route::get('/roles', [RoleController::class, 'index']);
+    Route::post('/roles', [RoleController::class, 'store'])->middleware('role:admin');
+    Route::delete('/roles/{id}', [RoleController::class, 'destroy'])->middleware('role:admin');
     Route::get('/shifts', function (\Illuminate\Http\Request $request) {
         $user = $request->user();
         $shifts = \App\Models\Shift::where('organization_id', $user->organization_id)->get();
