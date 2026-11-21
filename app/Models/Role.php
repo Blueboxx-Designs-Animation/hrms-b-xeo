@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Schema;
 
 class Role extends Model
 {
@@ -31,6 +32,8 @@ class Role extends Model
      */
     public static function ensureStandardRoles(): void
     {
+        $hasPermissionsCol = Schema::hasTable('roles') && Schema::hasColumn('roles', 'permissions');
+
         $standardRoles = [
             [
                 'name' => 'admin',
@@ -67,12 +70,20 @@ class Role extends Model
         foreach ($standardRoles as $roleData) {
             $role = self::where('name', $roleData['name'])->first();
             if ($role) {
-                if (empty($role->permissions)) {
+                if ($hasPermissionsCol && empty($role->permissions)) {
                     $role->permissions = $roleData['permissions'];
                     $role->save();
                 }
             } else {
-                self::create($roleData);
+                $createData = [
+                    'name' => $roleData['name'],
+                    'display_name' => $roleData['display_name'],
+                    'description' => $roleData['description'],
+                ];
+                if ($hasPermissionsCol) {
+                    $createData['permissions'] = $roleData['permissions'];
+                }
+                self::create($createData);
             }
         }
     }
@@ -96,7 +107,13 @@ class Role extends Model
             self::ensureStandardRoles();
             $role = self::where('name', $normalized)->first() 
                 ?? self::where('name', 'employee')->first()
-                ?? self::firstOrCreate(['name' => 'employee'], ['display_name' => 'Employee', 'description' => 'Employee self-service', 'permissions' => ['dashboard', 'payroll', 'tasks', 'attendance', 'leave']]);
+                ?? self::firstOrCreate(
+                    ['name' => 'employee'],
+                    [
+                        'display_name' => 'Employee',
+                        'description' => 'Employee self-service'
+                    ]
+                );
         }
 
         return $role;
