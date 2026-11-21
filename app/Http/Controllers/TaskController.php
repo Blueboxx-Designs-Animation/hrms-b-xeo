@@ -113,6 +113,8 @@ class TaskController extends Controller
     private function getAuthorizedAssigneeIds(User $actor): array
     {
         $role = $this->getRoleName($actor);
+        $rolePermissions = $actor->role?->permissions ?? [];
+        $hasTaskPermission = in_array('all', $rolePermissions) || in_array('tasks', $rolePermissions);
 
         if (in_array($role, ['admin', 'hr'])) {
             return User::where('organization_id', $actor->organization_id)
@@ -142,6 +144,14 @@ class TaskController extends Controller
                 ->toArray();
 
             return array_values(array_unique(array_merge([$actor->id], $teamEmpIds)));
+        }
+
+        // Custom role with task permission: can assign to active org users including oneself
+        if ($hasTaskPermission) {
+            return User::where('organization_id', $actor->organization_id)
+                ->where('status', 'active')
+                ->pluck('id')
+                ->toArray();
         }
 
         return [$actor->id];
@@ -188,8 +198,16 @@ class TaskController extends Controller
             ]);
 
         // Strict Role Scoping
-        if ($role === 'employee') {
+        $rolePermissions = $user->role?->permissions ?? [];
+        $hasTaskPermission = in_array('all', $rolePermissions) || in_array('tasks', $rolePermissions);
+
+        if ($role === 'employee' && !$hasTaskPermission) {
             $query->where('assigned_to', $user->id);
+        } elseif ($role === 'employee' && $hasTaskPermission) {
+            $query->where(function ($q) use ($user) {
+                $q->where('assigned_to', $user->id)
+                  ->orWhere('assigner_id', $user->id);
+            });
         } elseif ($role === 'team_leader') {
             $teamEmpIds = User::where('organization_id', $user->organization_id)
                 ->where('manager_id', $user->id)
@@ -367,8 +385,10 @@ class TaskController extends Controller
         $this->ensureSchemaIntegrity();
         $actor = $request->user();
         $actorRole = $this->getRoleName($actor);
+        $rolePermissions = $actor->role?->permissions ?? [];
+        $hasTaskPermission = in_array('all', $rolePermissions) || in_array('tasks', $rolePermissions);
 
-        if ($actorRole === 'employee') {
+        if ($actorRole === 'employee' && !$hasTaskPermission) {
             return response()->json(['message' => 'Unauthorized: Employees cannot assign tasks.'], 403);
         }
 
