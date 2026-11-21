@@ -69,8 +69,12 @@ class RoleController extends Controller
             return response()->json(['message' => 'Role not found'], 404);
         }
 
+        $standardRoles = ['admin', 'hr', 'manager', 'team_leader', 'employee'];
+        $isStandard = in_array(strtolower($role->name), $standardRoles);
+
         $validated = $request->validate([
             'display_name' => 'sometimes|required|string|max:100',
+            'name' => 'nullable|string|max:50',
             'description' => 'nullable|string|max:500',
             'permissions' => 'nullable|array',
         ]);
@@ -78,6 +82,21 @@ class RoleController extends Controller
         if (isset($validated['display_name'])) {
             $role->display_name = trim($validated['display_name']);
         }
+        
+        // Allow updating system key (code) for custom roles
+        if (!empty($validated['name']) && !$isStandard) {
+            $newKey = Str::slug($validated['name'], '_');
+            // If changed, ensure uniqueness
+            if ($newKey !== $role->name) {
+                if (Role::where('name', $newKey)->where('id', '!=', $id)->exists()) {
+                    return response()->json([
+                        'message' => "A role with system key '{$newKey}' already exists."
+                    ], 422);
+                }
+                $role->name = $newKey;
+            }
+        }
+
         if (isset($validated['description'])) {
             $role->description = $validated['description'];
         }
